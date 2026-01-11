@@ -1,0 +1,246 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model. All data is organized under a
+ * top-level 'users' collection, and access is granted only if the requesting user's UID matches the
+ * '{userId}' segment in the document path. This ensures that users can only ever access their own data.
+ *
+ * Data Structure: The data is hierarchically organized to represent user-specific information. The structure is:
+ *   /users/{userId} (UserProfile)
+ *     - /resumes/{resumeId} (Resume)
+ *       - /matches/{matchId} (Match)
+ *         - /interviewQuestions/{interviewQuestionId} (InterviewQuestion)
+ *     - /jobDescriptions/{jobDescriptionId} (JobDescription)
+ *     - /interviews/{interviewId} (InterviewSession)
+ *
+ * Key Security Decisions:
+ * - Deny-by-default: No access is granted unless explicitly allowed by a rule.
+ * - User Isolation: A user's data is completely isolated from all other users. Path-based rules are the
+ *   primary enforcement mechanism.
+ * - No User Enumeration: Listing documents in the top-level '/users' collection is forbidden to protect user privacy.
+ * - Path and Data Consistency: On document creation, rules validate that ownership fields within the document
+ *   (e.g., 'userId', 'id') match the corresponding ID in the document path. These fields are enforced as
+ *   immutable on updates to maintain relational integrity.
+ *
+ * Denormalization for Authorization: The design follows a path-based ownership model, which is a form of
+ * denormalization. By structuring all data under `/users/{userId}`, we avoid slow and costly `get()` calls
+ * to parent documents for authorization checks. This makes the rules simpler, faster, and more secure. For
+ * example, the rule for a resume at `/users/USER_A/resumes/RESUME_1` can simply check if the requester's
+ * UID is 'USER_A' without needing to read any other document.
+ *
+ * Structural Segregation: The entire data model is segregated by user at the root level (`/users/{userId}`),
+ * making it a highly secure pattern for multi-tenant data. There are no public collections in this model.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // Helper Functions
+    // ------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId from the path.
+     * This is the primary function for enforcing the ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Ensures an operation is performed by the owner on an existing document.
+     * Crucial for preventing modification or deletion of non-existent data.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * Validates that the document's internal 'userId' matches the document's path ID on creation.
+     */
+    function hasValidUserId(userId) {
+        return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability of the document's internal 'userId' field on update.
+     */
+    function isUserIdImmutable() {
+        return request.resource.data.userId == resource.data.userId;
+    }
+
+
+    /**
+     * Validates that the UserProfile's internal 'id' matches the document's path ID on creation.
+     */
+    function hasValidUserProfileData(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces immutability of the UserProfile's internal 'id' field on update.
+     */
+    function isUserProfileIdImmutable() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates that the Resume's internal 'userId' matches the document's path ID on creation.
+     */
+    function hasValidResumeData(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability of the Resume's internal 'userId' field on update.
+     */
+    function isResumeUserIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Validates that the JobDescription's internal 'userId' matches the document's path ID on creation.
+     */
+    function hasValidJobDescriptionData(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * Enforces immutability of the JobDescription's internal 'userId' field on update.
+     */
+    function isJobDescriptionUserIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * Validates that the Match's internal 'resumeId' matches the document's path ID on creation.
+     */
+    function hasValidMatchData(resumeId) {
+      return request.resource.data.resumeId == resumeId;
+    }
+
+    /**
+     * Enforces immutability of the Match's internal 'resumeId' field on update.
+     */
+    function isMatchResumeIdImmutable() {
+      return request.resource.data.resumeId == resource.data.resumeId;
+    }
+
+    /**
+     * Validates that the InterviewQuestion's internal 'matchId' matches the document's path ID on creation.
+     */
+    function hasValidInterviewQuestionData(matchId) {
+      return request.resource.data.matchId == matchId;
+    }
+
+    /**
+     * Enforces immutability of the InterviewQuestion's internal 'matchId' field on update.
+     */
+    function isInterviewQuestionMatchIdImmutable() {
+      return request.resource.data.matchId == resource.data.matchId;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Collection Rules
+    // ------------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents. A user can create their own profile, and
+     *   subsequently read, update, or delete it. Listing all user profiles is disallowed.
+     * @path /users/{userId}
+     * @allow (get, update, delete) An authenticated user `auth.uid: 'user_abc'` can access their own document at `/users/user_abc`.
+     * @allow (create) An authenticated user `auth.uid: 'user_abc'` can create their own profile document at `/users/user_abc`.
+     * @deny (list) An authenticated user cannot list all documents in the `/users` collection.
+     * @deny (get) An authenticated user `auth.uid: 'user_xyz'` cannot access `/users/user_abc`.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && hasValidUserProfileData(userId);
+      allow update: if isExistingOwner(userId) && isUserProfileIdImmutable();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Manages user-owned resumes. Access is restricted to the owner of the user profile.
+       * @path /users/{userId}/resumes/{resumeId}
+       * @allow (get, list, create, update, delete) User `auth.uid: 'user_abc'` can manage any document in the `/users/user_abc/resumes` subcollection.
+       * @deny (any) User `auth.uid: 'user_xyz'` cannot perform any operation on `/users/user_abc/resumes/{any}`.
+       * @principle Enforces strict ownership for all user-generated content via path-based security.
+       */
+      match /resumes/{resumeId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidResumeData(userId);
+        allow update: if isExistingOwner(userId) && isResumeUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Manages matches between a resume and job descriptions. Access is inherited from the parent user document.
+         * @path /users/{userId}/resumes/{resumeId}/matches/{matchId}
+         * @allow (any) User `auth.uid: 'user_abc'` can manage any document in `/users/user_abc/resumes/resume_123/matches`.
+         * @deny (any) User `auth.uid: 'user_xyz'` cannot access `/users/user_abc/resumes/resume_123/matches/{any}`.
+         * @principle Path-based security ensures that only the data owner can access deeply nested subcollections.
+         */
+        match /matches/{matchId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          allow create: if isOwner(userId) && hasValidMatchData(resumeId);
+          allow update: if isExistingOwner(userId) && isMatchResumeIdImmutable();
+          allow delete: if isExistingOwner(userId);
+
+          /**
+           * @description Manages interview questions generated for a specific match. Access is inherited from the parent user document.
+           * @path /users/{userId}/resumes/{resumeId}/matches/{matchId}/interviewQuestions/{interviewQuestionId}
+           * @allow (any) User `auth.uid: 'user_abc'` can manage any document in `/users/user_abc/resumes/resume_123/matches/match_456/interviewQuestions`.
+           * @deny (any) User `auth.uid: 'user_xyz'` cannot access this path.
+           * @principle Path-based security ensures that only the data owner can access deeply nested subcollections.
+           */
+          match /interviewQuestions/{interviewQuestionId} {
+            allow get: if isOwner(userId);
+            allow list: if isOwner(userId);
+            allow create: if isOwner(userId) && hasValidInterviewQuestionData(matchId);
+            allow update: if isExistingOwner(userId) && isInterviewQuestionMatchIdImmutable();
+            allow delete: if isExistingOwner(userId);
+          }
+        }
+      }
+
+      /**
+       * @description Manages user-owned job descriptions. Access is restricted to the owner of the user profile.
+       * @path /users/{userId}/jobDescriptions/{jobDescriptionId}
+       * @allow (get, list, create, update, delete) User `auth.uid: 'user_abc'` can manage any document in the `/users/user_abc/jobDescriptions` subcollection.
+       * @deny (any) User `auth.uid: 'user_xyz'` cannot perform any operation on `/users/user_abc/jobDescriptions/{any}`.
+       * @principle Enforces strict ownership for all user-generated content via path-based security.
+       */
+      match /jobDescriptions/{jobDescriptionId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidJobDescriptionData(userId);
+        allow update: if isExistingOwner(userId) && isJobDescriptionUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Manages mock interview sessions. Access is restricted to the owner.
+       * @path /users/{userId}/interviews/{interviewId}
+       * @allow (any) User `auth.uid: 'user_abc'` can manage their own interview sessions.
+       * @deny (any) User `auth.uid: 'user_xyz'` cannot access another user's interview data.
+       * @principle Path-based security ensures that only the data owner can access their interview sessions.
+       */
+       match /interviews/{interviewId} {
+        allow read: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && hasValidUserId(userId);
+        allow update: if isExistingOwner(userId) && isUserIdImmutable();
+        allow delete: if isExistingOwner(userId);
+       }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+
+[
+  {
+    "id": "c001",
+    "skill": "React",
+    "title": "React - The Complete Guide",
+    "provider": "Udemy",
+    "url": "https://www.udemy.com/course/react-the-complete-guide-incl-redux/"
+  },
+  {
+    "id": "c002",
+    "skill": "Node.js",
+    "title": "The Complete Node.js Developer Course",
+    "provider": "Udemy",
+    "url": "https://www.udemy.com/course/the-complete-nodejs-developer-course-2/"
+  },
+  {
+    "id": "c003",
+    "skill": "Python",
+    "title": "Python for Everybody",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/specializations/python"
+  },
+  {
+    "id": "c004",
+    "skill": "Java",
+    "title": "Java Programming and Software Engineering Fundamentals",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/specializations/java-programming"
+  },
+  {
+    "id": "c005",
+    "skill": "SQL",
+    "title": "SQL for Data Science",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/sql-for-data-science"
+  },
+  {
+    "id": "c006",
+    "skill": "TypeScript",
+    "title": "Understanding TypeScript",
+    "provider": "Udemy",
+    "url": "https://www.udemy.com/course/understanding-typescript/"
+  },
+  {
+    "id": "c007",
+    "skill": "AWS",
+    "title": "AWS Certified Cloud Practitioner",
+    "provider": "Amazon",
+    "url": "https://aws.amazon.com/certification/certified-cloud-practitioner/"
+  },
+  {
+    "id": "c008",
+    "skill": "Communication",
+    "title": "Improving Communication Skills",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/good-with-words"
+  },
+  {
+    "id": "c009",
+    "skill": "Teamwork",
+    "title": "High-Performance Collaboration: Leadership, Teamwork, and Negotiation",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/collaboration"
+  },
+  {
+    "id": "c010",
+    "skill": "Leadership",
+    "title": "Leadership and Influence",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/leadership-influence"
+  },
+  {
+    "id": "c011",
+    "skill": "Problem Solving",
+    "title": "Effective Problem-Solving and Decision-Making",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/problem-solving"
+  },
+  {
+    "id": "c012",
+    "skill": "Agile",
+    "title": "Introduction to Agile Development and Scrum",
+    "provider": "Coursera",
+    "url": "https://www.coursera.org/learn/agile-development-and-scrum"
+  }
+]

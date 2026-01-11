@@ -1,0 +1,51 @@
+
+[
+  {
+    "id": "dsa001",
+    "skill": "Python",
+    "title": "Two Sum",
+    "url": "https://leetcode.com/problems/two-sum/"
+  },
+  {
+    "id": "dsa002",
+    "skill": "Java",
+    "title": "Reverse a String",
+    "url": "https://www.geeksforgeeks.org/reverse-a-string-in-java/"
+  },
+  {
+    "id": "dsa003",
+    "skill": "JavaScript",
+    "title": "Valid Parentheses",
+    "url": "https://leetcode.com/problems/valid-parentheses/"
+  },
+  {
+    "id": "dsa004",
+    "skill": "React",
+    "title": "Build a simple todo list component",
+    "url": "https://react.dev/learn/tutorial-tic-tac-toe"
+  },
+  {
+    "id": "dsa005",
+    "skill": "Node.js",
+    "title": "Create a simple web server",
+    "url": "https://nodejs.dev/en/learn/build-an-http-server/"
+  },
+  {
+    "id": "dsa006",
+    "skill": "SQL",
+    "title": "Combine Two Tables",
+    "url": "https://leetcode.com/problems/combine-two-tables/"
+  },
+  {
+    "id": "dsa007",
+    "skill": "TypeScript",
+    "title": "Implement a generic stack",
+    "url": "https://www.typescriptlang.org/docs/handbook/2/generics.html"
+  },
+  {
+    "id": "dsa008",
+    "skill": "Algorithms",
+    "title": "Binary Search",
+    "url": "https://leetcode.com/problems/binary-search/"
+  }
+]
